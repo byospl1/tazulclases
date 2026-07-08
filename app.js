@@ -104,7 +104,7 @@ var STR = {
     gate_bad:'Correo o contraseña incorrectos.',
     gate_exists:'Ese correo ya está registrado. Inicia sesión.',
     gate_invalid:'Escribe un correo válido.',
-    gate_wait:'Un momento…', hi:'Hola'
+    gate_wait:'Un momento…', hi:'Hola', username:'Nombre de usuario', username_ph:'Ej. hugo_lorenzo', gate_need_user:'Elige un nombre de usuario.'
   },
   en: {
     nav_home:'Home', nav_subjects:'Subjects', admin:'Panel', logout:'Log out',
@@ -130,7 +130,7 @@ var STR = {
     gate_bad:'Wrong email or password.',
     gate_exists:'That email is already registered. Log in instead.',
     gate_invalid:'Enter a valid email.',
-    gate_wait:'One moment…', hi:'Hi'
+    gate_wait:'One moment…', hi:'Hi', username:'Username', username_ph:'e.g. hugo_lorenzo', gate_need_user:'Choose a username.'
   }
 };
 
@@ -139,7 +139,7 @@ var S = {
   lang: localStorage.getItem('ec_lang') || 'es',
   view: 'home', subject: 'grammar', filter: 'all',
   authReady: DEMO, authed: false, userEmail: '', isAdmin: false,
-  gate: 'login', gateErr: '', gateBusy: false, gateEmail: '',
+  gate: 'login', gateErr: '', gateBusy: false, gateEmail: '', gateUser: '', userName: '',
   resources: DEMO ? seed() : [], fDl: true
 };
 function t () { return STR[S.lang]; }
@@ -198,6 +198,8 @@ function downloadLink (r) {
 function gateHTML () {
   var T = t();
   var isLogin = S.gate === 'login';
+  var userField = isLogin ? '' :
+    '<div class="field"><label>'+T.username+'</label><input id="g-username" type="text" autocomplete="nickname" value="'+esc(S.gateUser)+'" placeholder="'+T.username_ph+'"/></div>';
   var langToggle = '<div class="lang gate-lang"><button class="'+(S.lang==='es'?'on':'')+'" data-action="lang" data-lang="es">ES</button>'+
     '<button class="'+(S.lang==='en'?'on':'')+'" data-action="lang" data-lang="en">EN</button></div>';
   return '<div class="gate">'+ langToggle +
@@ -211,6 +213,7 @@ function gateHTML () {
         '<button class="gate-tab '+(isLogin?'on':'')+'" data-action="gate-tab" data-tab="login">'+T.tab_login+'</button>'+
         '<button class="gate-tab '+(!isLogin?'on':'')+'" data-action="gate-tab" data-tab="register">'+T.tab_register+'</button>'+
       '</div>'+
+      userField +
       '<div class="field"><label>'+T.email+'</label><input id="g-email" type="email" inputmode="email" autocomplete="email" value="'+esc(S.gateEmail)+'" placeholder="tucorreo@ejemplo.com"/></div>'+
       '<div class="field"><label>'+T.password+'</label><input id="g-pass" type="password" autocomplete="'+(isLogin?'current-password':'new-password')+'" placeholder="••••••••"/></div>'+
       (S.gateErr ? '<div class="err">'+esc(S.gateErr)+'</div>' : '<div class="err"></div>')+
@@ -428,18 +431,31 @@ function gateError (code) {
 function doGateAuth (isRegister) {
   var email = (document.getElementById('g-email') || {}).value || '';
   var pass  = (document.getElementById('g-pass') || {}).value || '';
-  email = email.trim();
-  S.gateEmail = email;
+  var user  = (document.getElementById('g-username') || {}).value || '';
+  email = email.trim(); user = user.trim();
+  S.gateEmail = email; S.gateUser = user;
+  if (isRegister && !user) { S.gateErr = t().gate_need_user; render(); return; }
   if (pass.length < 6) { S.gateErr = t().gate_min; render(); return; }
 
   if (DEMO) {
-    S.authed = true; S.isAdmin = true; S.userEmail = email || 'demo'; S.gateErr = '';
+    S.authed = true; S.isAdmin = true; S.userEmail = email || 'demo'; S.userName = user; S.gateErr = '';
     render(); return;
   }
   S.gateBusy = true; S.gateErr = ''; render();
-  var op = isRegister
-    ? AUTH.createUserWithEmailAndPassword(email, pass)
-    : AUTH.signInWithEmailAndPassword(email, pass);
+  var op;
+  if (isRegister) {
+    op = AUTH.createUserWithEmailAndPassword(email, pass).then(function (cred) {
+      var u = cred.user;
+      return u.updateProfile({ displayName: user }).then(function () {
+        return DB.collection('usuarios').doc(u.uid).set({
+          usuario: user, email: email, puntaje: 0,
+          fecha: new Date().toISOString().slice(0, 10)
+        });
+      });
+    });
+  } else {
+    op = AUTH.signInWithEmailAndPassword(email, pass);
+  }
   op.then(function () {
     S.gateBusy = false;   // onAuthStateChanged completa el resto
   }).catch(function (err) {
@@ -509,7 +525,7 @@ if (!DEMO && AUTH) {
   AUTH.onAuthStateChanged(function (user) {
     S.authReady = true;
     if (user) {
-      S.authed = true; S.userEmail = user.email || '';
+      S.authed = true; S.userEmail = user.email || ''; S.userName = user.displayName || '';
       S.isAdmin = computeAdmin(user.email);
       loadResources();     // carga + render
     } else {
