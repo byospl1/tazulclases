@@ -238,13 +238,17 @@ function navHTML () {
     '</div></div></div>';
 }
 
+function subjCount (key) { return S.resources.filter(function (r) { return r.subject === key; }).length; }
+function maxSubjCount () { var m = 0; SUBJ_ORDER.forEach(function (k) { var c = subjCount(k); if (c > m) m = c; }); return m; }
 function subjCardHTML (key) {
   var s = SUBJECTS[key];
+  var c = subjCount(key), mx = maxSubjCount() || 1;
+  var pct = c ? Math.max(10, Math.round(c / mx * 100)) : 0;
   return '<div class="subjcard" data-action="open-subject" data-subject="'+key+'">'+
     '<div class="subj-icon" style="background:'+s.color+'">'+subjIcon(key,'#fff',27)+'</div>'+
     '<div style="flex:1;min-width:0"><div class="name">'+s.name+'</div><div class="es">'+s.es+'</div>'+
-      '<div class="bar"><div style="width:'+s.pct+'%;background:'+s.color+'"></div></div>'+
-      '<div class="count">'+s.count+' '+t().materials+'</div></div></div>';
+      '<div class="bar"><div style="width:'+pct+'%;background:'+s.color+'"></div></div>'+
+      '<div class="count">'+c+' '+t().materials+'</div></div></div>';
 }
 
 function resCardHTML (r) {
@@ -273,8 +277,8 @@ function homeHTML () {
       '<div style="flex:1"><div class="tag">🐾 '+T.mascot+'</div>'+
         '<h1>'+T.hero_title+'</h1><p>'+T.hero_sub+'</p>'+
         '<button class="btn-primary" data-action="open-subject" data-subject="grammar">'+T.cta+'</button></div>'+
-      '<div class="stats"><div class="stat"><b style="color:#17b4a6">120+</b><span>'+T.stat_res+'</span></div>'+
-        '<div class="stat"><b style="color:#ff8a4c">6</b><span>'+T.stat_subj+'</span></div></div></div>'+
+      '<div class="stats"><div class="stat"><b style="color:#17b4a6">'+S.resources.length+'</b><span>'+T.stat_res+'</span></div>'+
+        '<div class="stat"><b style="color:#ff8a4c">'+SUBJ_ORDER.length+'</b><span>'+T.stat_subj+'</span></div></div></div>'+
     '<div class="section-head"><h2>'+T.subjects+'</h2><span class="hint">'+T.subjects_hint+'</span></div>'+
     '<div class="subjects">'+subjects+'</div>'+
     '<div class="section-head"><h2>'+T.recent+'</h2></div>'+
@@ -298,7 +302,7 @@ function subjectHTML () {
     '<button class="back" data-action="home">'+svg('<path d="M19 12H5M12 19l-7-7 7-7"/>','currentColor',15)+' '+T.back+'</button>'+
     '<div class="subj-head" style="background:'+s.light+'">'+
       '<div class="big-icon" style="background:'+s.color+'">'+subjIcon(S.subject,'#fff',36)+'</div>'+
-      '<div><h1>'+s.name+'</h1><div class="sub">'+s.es+' · '+s.count+' '+T.materials+'</div></div></div>'+
+      '<div><h1>'+s.name+'</h1><div class="sub">'+s.es+' · '+subjCount(S.subject)+' '+T.materials+'</div></div></div>'+
     '<div class="chips">'+chips+'</div>'+
     '<div class="grid3">'+cards+'</div>'+
     footerHTML()+'</div>';
