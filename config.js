@@ -10,7 +10,7 @@
    sola a tu base de datos.
    ========================================================================= */
 
-const firebaseConfig = {
+window.FIREBASE_CONFIG = {   
   apiKey: "AIzaSyBcKTuhb1N5uRvp9c6grI1eZlm-xxsTMGI",
   authDomain: "english-class-6fd4d.firebaseapp.com",
   projectId: "english-class-6fd4d",
