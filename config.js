@@ -10,11 +10,11 @@
    sola a tu base de datos.
    ========================================================================= */
 
-window.FIREBASE_CONFIG = {
-  apiKey: "PEGA_AQUI_TU_API_KEY",
-  authDomain: "PEGA_AQUI.firebaseapp.com",
-  projectId: "PEGA_AQUI",
-  storageBucket: "PEGA_AQUI.appspot.com",
-  messagingSenderId: "PEGA_AQUI",
-  appId: "PEGA_AQUI"
+const firebaseConfig = {
+  apiKey: "AIzaSyBcKTuhb1N5uRvp9c6grI1eZlm-xxsTMGI",
+  authDomain: "english-class-6fd4d.firebaseapp.com",
+  projectId: "english-class-6fd4d",
+  storageBucket: "english-class-6fd4d.firebasestorage.app",
+  messagingSenderId: "15293151275",
+  appId: "1:15293151275:web:9b5acf012dc7c2a123926e"
 };
