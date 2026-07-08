@@ -273,11 +273,16 @@ function resCardHTML (r) {
 
 function homeHTML () {
   var T = t();
+  var greet = S.userName
+    ? (S.lang === 'es' ? '¡Hola, '+esc(S.userName)+'! Soy Bigotes, tu guía'
+                       : 'Hi, '+esc(S.userName)+'! I\u2019m Whiskers, your guide')
+    : T.mascot;
   var subjects = SUBJ_ORDER.map(subjCardHTML).join('');
   var recent = S.resources.slice(0, 4).map(resCardHTML).join('');
   return '<div class="wrap">'+
-    '<div class="hero"><div class="hero-cat">'+CAT_BIG+'</div>'+
-      '<div style="flex:1"><div class="tag">🐾 '+T.mascot+'</div>'+
+    '<div class="hero"><div class="hero-cat" id="mascot" title="¡Da clic!">'+CAT_BIG+'</div>'+
+      '<div class="cat-bubble" id="cat-bubble"></div>'+
+      '<div style="flex:1"><div class="tag">🐾 '+greet+'</div>'+
         '<h1>'+T.hero_title+'</h1><p>'+T.hero_sub+'</p>'+
         '<button class="btn-primary" data-action="open-subject" data-subject="grammar">'+T.cta+'</button></div>'+
       '<div class="stats"><div class="stat"><b style="color:#17b4a6">'+S.resources.length+'</b><span>'+T.stat_res+'</span></div>'+
@@ -416,6 +421,42 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Enter' && !S.authed && S.authReady) {
     var f = document.getElementById('g-pass'); if (f) { S.gate === 'login' ? doGateAuth(false) : doGateAuth(true); }
   }
+});
+
+/* ---------- Bigotes interactivo (gestos + datos curiosos) ---------- */
+var CAT_FACTS = [
+  { w:'💡', es:'La palabra "set" tiene más de 400 significados en inglés.', en:'The word "set" has over 400 meanings in English.' },
+  { w:'📚', es:'"Serendipity": encontrar algo bueno por casualidad.', en:'"Serendipity": finding something good by chance.' },
+  { w:'🐱', es:'"Cat got your tongue?" se dice cuando alguien se queda callado.', en:'"Cat got your tongue?" is said when someone goes quiet.' },
+  { w:'✨', es:'"Bookworm" = ratón de biblioteca, alguien que ama leer.', en:'"Bookworm" = someone who loves reading.' },
+  { w:'💬', es:'"Break a leg" significa ¡buena suerte!, no rómpete nada.', en:'"Break a leg" means good luck!, not literally.' },
+  { w:'🍰', es:'"Piece of cake" = algo muy fácil, pan comido.', en:'"Piece of cake" = something very easy.' },
+  { w:'🌧️', es:'"Raining cats and dogs" = está lloviendo muchísimo.', en:'"Raining cats and dogs" = raining very hard.' },
+  { w:'🎯', es:'"Hit the books" = ponerse a estudiar en serio.', en:'"Hit the books" = to start studying hard.' },
+  { w:'💫', es:'"Once in a blue moon" = muy rara vez.', en:'"Once in a blue moon" = very rarely.' },
+  { w:'🧠', es:'El inglés tiene más de 170,000 palabras en uso.', en:'English has over 170,000 words in current use.' },
+  { w:'🔤', es:'"E" es la letra más usada en inglés.', en:'"E" is the most used letter in English.' },
+  { w:'🌟', es:'"On cloud nine" = estar felizísimo, en las nubes.', en:'"On cloud nine" = to be extremely happy.' }
+];
+function catAnim (cls) {
+  var c = document.getElementById('mascot'); if (!c) return;
+  c.classList.remove('pop','wiggle'); void c.offsetWidth; c.classList.add(cls);
+  setTimeout(function () { c.classList.remove(cls); }, 560);
+}
+function showCatTip () {
+  var b = document.getElementById('cat-bubble'); if (!b) return;
+  var f = CAT_FACTS[Math.floor(Math.random() * CAT_FACTS.length)];
+  b.innerHTML = '<span class="cat-emoji">'+f.w+'</span> '+esc(S.lang === 'es' ? f.es : f.en);
+  b.classList.add('show');
+  clearTimeout(showCatTip._t);
+  showCatTip._t = setTimeout(function () { b.classList.remove('show'); }, 6500);
+}
+document.addEventListener('click', function (e) {
+  if (!document.getElementById('mascot')) return;
+  if (e.target.closest && e.target.closest('#mascot')) { catAnim('pop'); showCatTip(); return; }
+  catAnim('wiggle');
+  S._clicks = (S._clicks || 0) + 1;
+  if (S._clicks % 6 === 0) showCatTip();
 });
 
 /* ---------- 11. Autenticación (muro) ---------- */
