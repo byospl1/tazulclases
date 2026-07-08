@@ -228,14 +228,17 @@ input:focus,select:focus{outline:none;border-color:#8b7bf0;box-shadow:0 0 0 3px 
 @keyframes cat-wiggle{0%{transform:rotate(0)}25%{transform:rotate(-6deg)}50%{transform:rotate(5deg)}75%{transform:rotate(-3deg)}100%{transform:rotate(0)}}
 .hero-cat.pop{animation:cat-pop .55s ease}
 .hero-cat.wiggle{animation:cat-wiggle .45s ease}
-.cat-bubble{position:absolute;top:6px;left:150px;max-width:290px;background:#2a2740;color:#fff;
-  padding:11px 15px;border-radius:16px;font-size:13.5px;font-weight:600;line-height:1.4;
-  box-shadow:0 14px 30px -12px rgba(43,39,64,.6);z-index:8;
-  opacity:0;transform:translateY(8px) scale(.96);pointer-events:none;transition:all .22s ease}
-.cat-bubble::after{content:'';position:absolute;left:-8px;top:24px;border:8px solid transparent;border-right-color:#2a2740;border-left:0}
+.cat-bubble{position:absolute;left:30px;top:-20px;max-width:300px;background:#fff;color:#2a2740;
+  border:2.5px solid #2a2740;padding:12px 16px;border-radius:22px;font-size:13.5px;font-weight:700;line-height:1.42;
+  box-shadow:0 18px 36px -14px rgba(43,39,64,.5);z-index:30;
+  opacity:0;transform:translateY(10px) scale(.85);transform-origin:20% bottom;pointer-events:none;
+  transition:opacity .2s ease, transform .28s cubic-bezier(.34,1.56,.64,1)}
 .cat-bubble.show{opacity:1;transform:translateY(0) scale(1)}
-.cat-emoji{font-size:16px}
+.cat-bubble::before{content:'';position:absolute;left:30px;bottom:-16px;width:15px;height:15px;background:#fff;border:2.5px solid #2a2740;border-radius:50%}
+.cat-bubble::after{content:'';position:absolute;left:20px;bottom:-30px;width:9px;height:9px;background:#fff;border:2.5px solid #2a2740;border-radius:50%}
+.cat-emoji{font-size:17px;margin-right:2px}
 @media (max-width:640px){
-  .cat-bubble{left:14px;right:14px;top:-6px;max-width:none}
-  .cat-bubble::after{display:none}
+  .cat-bubble{left:50%;transform:translate(-50%,10px) scale(.85);top:-14px;max-width:82%}
+  .cat-bubble.show{transform:translate(-50%,0) scale(1)}
+  .cat-bubble::before,.cat-bubble::after{display:none}
 }
