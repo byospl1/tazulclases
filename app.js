@@ -354,7 +354,8 @@ function adminHTML () {
 }
 
 function footerHTML () {
-  return '<div class="footer"><div>🐾 English Class · Teacher Azul Covarrubias</div>'+;
+  return '<div class="footer"><div>🐾 English Class · Teacher Azul Covarrubias</div>'+
+     '<div>Firebase + GitHub Pages</div></div>';;
 }
 
 /* ---------- 8. Modal reproductor ---------- */
