@@ -148,6 +148,31 @@ function esc (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function
   return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); }
 function viewLabel (type) { return type === 'Video' ? t().watch : (type === 'Audio' ? t().listen : t().view); }
 
+/* Detecta el ID de un enlace de Google Drive (cualquier formato) */
+function driveId (url) {
+  if (!url) return null;
+  var m = url.match(/\/file\/d\/([^/]+)/) || url.match(/[?&]id=([^&]+)/) || url.match(/\/d\/([^/]+)/);
+  return m ? m[1] : null;
+}
+/* Detecta el ID de un enlace de YouTube (watch, youtu.be, embed, shorts) */
+function ytId (url) {
+  if (!url) return null;
+  var m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?&/]+)/) ||
+          url.match(/\/embed\/([^?&/]+)/) || url.match(/\/shorts\/([^?&/]+)/);
+  return m ? m[1] : null;
+}
+/* Enlace para VER (vista previa embebida) — convierte solo */
+function previewLink (r) {
+  var d = driveId(r.link); if (d) return 'https://drive.google.com/file/d/' + d + '/preview';
+  var y = ytId(r.link);   if (y) return 'https://www.youtube.com/embed/' + y;
+  return r.link || '';
+}
+/* Enlace para DESCARGAR (descarga directa de Drive) — convierte solo */
+function downloadLink (r) {
+  var d = driveId(r.link); if (d) return 'https://drive.google.com/uc?export=download&id=' + d;
+  return r.link || '';
+}
+
 /* ---------- 6. Vistas (HTML) ---------- */
 function navHTML () {
   var T = t();
@@ -285,13 +310,14 @@ function footerHTML () {
 /* ---------- 7. Modal reproductor ---------- */
 function openViewer (r) {
   var T = t(), root = document.getElementById('modal-root');
+  var pv = previewLink(r);
   var body;
-  if (!r.link) {
+  if (!pv) {
     body = '<div style="padding:50px;text-align:center;color:#9a97ad;font-weight:700">'+T.no_link+'</div>';
-  } else if (r.type === 'Audio' && /\.(mp3|ogg|wav|m4a)(\?|$)/i.test(r.link)) {
-    body = '<audio controls src="'+esc(r.link)+'"></audio>';
+  } else if (r.type === 'Audio' && /\.(mp3|ogg|wav|m4a)(\?|$)/i.test(pv)) {
+    body = '<audio controls src="'+esc(pv)+'"></audio>';
   } else {
-    body = '<iframe src="'+esc(r.link)+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+    body = '<iframe src="'+esc(pv)+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
   }
   var openLink = r.link ? '<a href="'+esc(r.link)+'" target="_blank" rel="noopener">'+T.open_new+'</a>' : '';
   root.innerHTML = '<div class="modal-bg" data-action="close-modal"><div class="modal" data-stop="1">'+
@@ -330,7 +356,7 @@ document.addEventListener('click', function (e) {
   else if (a === 'add')      { doAdd(); }
   else if (a === 'delete')   { doDelete(el.getAttribute('data-id')); }
   else if (a === 'view')     { openViewer(byId(el.getAttribute('data-id'))); }
-  else if (a === 'download') { var r = byId(el.getAttribute('data-id')); if (r && r.link) window.open(r.link, '_blank'); else openViewer(r); }
+  else if (a === 'download') { var r = byId(el.getAttribute('data-id')); var dl = r ? downloadLink(r) : ''; if (dl) window.open(dl, '_blank'); else openViewer(r); }
   else if (a === 'close-modal') { if (!e.target.closest('[data-stop]') || e.target.closest('.modal-close')) closeViewer(); }
 });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeViewer(); });
