@@ -140,7 +140,7 @@ var S = {
   view: 'home', subject: 'grammar', filter: 'all',
   authReady: DEMO, authed: false, userEmail: '', isAdmin: false,
   gate: 'login', gateErr: '', gateBusy: false, gateEmail: '',
-  resources: seed(), fDl: true
+  resources: DEMO ? seed() : [], fDl: true
 };
 function t () { return STR[S.lang]; }
 
@@ -494,7 +494,8 @@ function loadResources () {
         type: d.tipo || 'Doc', link: d.enlace || '', dl: !!d.descargable, fecha: d.fecha || ''
       });
     });
-    if (arr.length) S.resources = arr;   // si está vacío, deja el material de ejemplo
+    if (!DEMO) S.resources = arr;        // conectado: siempre lo real (aunque vacío)
+    else if (arr.length) S.resources = arr;
     render();
   }).catch(function (err) {
     console.warn('No se pudo leer Firestore, usando ejemplo:', err);
