@@ -1,6 +1,7 @@
 /* =========================================================================
    English Class · Biblioteca virtual — aplicación (JavaScript puro)
-   Funciona en GitHub Pages. Se conecta a Firebase (Firestore + Auth).
+   Muro de acceso: nadie ve la biblioteca sin iniciar sesión o registrarse.
+   Solo la profe (correos en window.ADMIN_EMAILS) ve el panel de administración.
    Si aún no pegas tu configuración en config.js, corre en MODO DEMO.
    ========================================================================= */
 
@@ -18,6 +19,17 @@ var DB = null, AUTH = null, DEMO = true;
     } catch (e) { console.warn('Firebase no inició, modo demo:', e); DEMO = true; }
   }
 })();
+
+/* Correos con permiso de administrador (panel para subir material) */
+var ADMIN_EMAILS = (window.ADMIN_EMAILS || []).map(function (e) {
+  return String(e).toLowerCase().trim();
+}).filter(function (e) { return e && e.indexOf('correo') === -1; });
+function computeAdmin (email) {
+  if (DEMO) return true;                 // en demo, cualquiera prueba el panel
+  if (!ADMIN_EMAILS.length) return true; // si no configuraste la lista, no te bloquea
+  if (!email) return false;
+  return ADMIN_EMAILS.indexOf(String(email).toLowerCase()) !== -1;
+}
 
 /* ---------- 1. Datos de referencia ---------- */
 var SUBJECTS = {
@@ -43,7 +55,7 @@ function seed () {
   };
   return [
     R('Present Perfect: guía completa','grammar','PDF',true),
-    R('Conditionals explained','grammar','Video',false,'https://www.youtube.com/embed/videoseries'),
+    R('Conditionals explained','grammar','Video',false),
     R('Modal verbs — worksheet','grammar','Doc',true),
     R('Irregular verbs (audio drill)','grammar','Audio',false),
     R('Reported speech — rules','grammar','PDF',true),
@@ -52,13 +64,13 @@ function seed () {
     R('Food & cooking flashcards','vocab','Doc',true),
     R('"A Cup of Tea" — short story','reading','Doc',true),
     R('News article + questions','reading','PDF',true),
-    R('Reading strategies','reading','Video',false,'https://www.youtube.com/embed/videoseries'),
+    R('Reading strategies','reading','Video',false),
     R('Vocabulary in context','reading','PDF',true),
-    R('Job Interview — B1','listening','Video',false,'https://www.youtube.com/embed/videoseries'),
+    R('Job Interview — B1','listening','Video',false),
     R('Everyday conversations','listening','Audio',false),
     R('Numbers & dates dictation','listening','Audio',true),
     R('Listening exam practice','listening','PDF',true),
-    R('Making introductions','speaking','Video',false,'https://www.youtube.com/embed/videoseries'),
+    R('Making introductions','speaking','Video',false),
     R('Pronunciation: /th/ sound','speaking','Audio',false),
     R('Opinion essay — model','writing','Doc',true),
     R('Punctuation guide','writing','PDF',true)
@@ -68,44 +80,57 @@ function seed () {
 /* ---------- 2. Textos ES / EN ---------- */
 var STR = {
   es: {
-    nav_home:'Inicio', nav_subjects:'Materias', admin:'Entrar (Admin)',
+    nav_home:'Inicio', nav_subjects:'Materias', admin:'Panel', logout:'Salir',
     mascot:'¡Hola! Soy Bigotes, tu guía', hero_title:'¿Qué aprendemos hoy?',
     hero_sub:'Toda tu biblioteca de inglés para bachillerato en un solo lugar: PDFs, audios, vídeos y documentos, organizados por materia.',
     cta:'Explorar materias', stat_res:'recursos', stat_subj:'materias',
     subjects:'Materias', subjects_hint:'Elige una para empezar', materials:'recursos',
     recent:'Recién agregado', view:'Ver', watch:'Ver vídeo', listen:'Escuchar', download:'Descargar',
     back:'Volver', all:'Todos', dlable:'descargable', empty:'Aún no hay material en esta materia.',
-    login_title:'Panel de administración', login_sub:'Solo Teacher Azul puede subir material.',
-    email:'Correo', password:'Contraseña', enter:'Entrar',
-    demo_note:'Modo demo: escribe cualquier cosa y entra.', bad_login:'Correo o contraseña incorrectos.',
-    add_title:'Agregar recurso', add_sub:'Pega el enlace de Drive o YouTube.',
+    add_title:'Agregar recurso', add_sub:'Pega el enlace normal de Drive o YouTube; se convierte solo.',
     f_title:'Título', f_title_ph:'Ej. Present Perfect: guía', f_subject:'Materia', f_type:'Tipo',
     f_link:'Enlace (Drive / YouTube)', f_link_ph:'https://…', f_dl:'Permitir descarga', add_btn:'Agregar a la biblioteca',
-    manage:'Material publicado', logout:'Salir',
+    manage:'Material publicado',
     c_title:'Título', c_subject:'Materia', c_type:'Tipo', c_dl:'Descarga', yes:'Sí', del:'Eliminar',
-    tip:'Los vídeos van a YouTube (embebidos) y los PDF/audios/docs a Google Drive con enlace público. Aquí solo guardas el enlace: nunca te quedas sin espacio y todo sigue gratis.',
+    tip:'Los vídeos van a YouTube y los PDF/audios/docs a Google Drive con enlace público. Aquí solo guardas el enlace: nunca te quedas sin espacio y todo sigue gratis.',
     open_new:'Abrir en pestaña nueva', no_link:'Este recurso todavía no tiene enlace. Agrégalo desde el panel.',
-    demo_badge:'MODO DEMO · conecta Firebase en config.js'
+    demo_badge:'MODO DEMO · conecta Firebase en config.js',
+    /* muro de acceso */
+    gate_welcome:'Tu biblioteca de inglés', gate_sub:'Inicia sesión o crea tu cuenta para entrar.',
+    tab_login:'Iniciar sesión', tab_register:'Crear cuenta',
+    email:'Correo', password:'Contraseña', name_lbl:'Tu nombre',
+    gate_login_btn:'Entrar', gate_register_btn:'Crear mi cuenta',
+    gate_min:'La contraseña debe tener al menos 6 caracteres.',
+    gate_bad:'Correo o contraseña incorrectos.',
+    gate_exists:'Ese correo ya está registrado. Inicia sesión.',
+    gate_invalid:'Escribe un correo válido.',
+    gate_wait:'Un momento…', hi:'Hola'
   },
   en: {
-    nav_home:'Home', nav_subjects:'Subjects', admin:'Log in (Admin)',
+    nav_home:'Home', nav_subjects:'Subjects', admin:'Panel', logout:'Log out',
     mascot:'Hi! I\u2019m Whiskers, your guide', hero_title:'What shall we learn today?',
     hero_sub:'Your whole high-school English library in one place: PDFs, audio, videos and documents, organized by subject.',
     cta:'Explore subjects', stat_res:'resources', stat_subj:'subjects',
     subjects:'Subjects', subjects_hint:'Pick one to start', materials:'resources',
     recent:'Recently added', view:'View', watch:'Watch', listen:'Listen', download:'Download',
     back:'Back', all:'All', dlable:'downloadable', empty:'No material in this subject yet.',
-    login_title:'Admin panel', login_sub:'Only Teacher Azul can upload material.',
-    email:'Email', password:'Password', enter:'Log in',
-    demo_note:'Demo mode: type anything and log in.', bad_login:'Wrong email or password.',
-    add_title:'Add resource', add_sub:'Paste the Drive or YouTube link.',
+    add_title:'Add resource', add_sub:'Paste the normal Drive or YouTube link; it converts itself.',
     f_title:'Title', f_title_ph:'e.g. Present Perfect: guide', f_subject:'Subject', f_type:'Type',
     f_link:'Link (Drive / YouTube)', f_link_ph:'https://…', f_dl:'Allow download', add_btn:'Add to library',
-    manage:'Published material', logout:'Log out',
+    manage:'Published material',
     c_title:'Title', c_subject:'Subject', c_type:'Type', c_dl:'Download', yes:'Yes', del:'Delete',
-    tip:'Videos live on YouTube (embedded) and PDFs/audio/docs on Google Drive with a public link. Here you only store the link: you never run out of space and it stays free.',
+    tip:'Videos live on YouTube and PDFs/audio/docs on Google Drive with a public link. Here you only store the link: you never run out of space and it stays free.',
     open_new:'Open in new tab', no_link:'This resource has no link yet. Add it from the panel.',
-    demo_badge:'DEMO MODE · connect Firebase in config.js'
+    demo_badge:'DEMO MODE · connect Firebase in config.js',
+    gate_welcome:'Your English library', gate_sub:'Log in or create your account to enter.',
+    tab_login:'Log in', tab_register:'Sign up',
+    email:'Email', password:'Password', name_lbl:'Your name',
+    gate_login_btn:'Log in', gate_register_btn:'Create my account',
+    gate_min:'Password must be at least 6 characters.',
+    gate_bad:'Wrong email or password.',
+    gate_exists:'That email is already registered. Log in instead.',
+    gate_invalid:'Enter a valid email.',
+    gate_wait:'One moment…', hi:'Hi'
   }
 };
 
@@ -113,8 +138,9 @@ var STR = {
 var S = {
   lang: localStorage.getItem('ec_lang') || 'es',
   view: 'home', subject: 'grammar', filter: 'all',
-  authed: false, resources: seed(), loaded: false,
-  fDl: true, loginErr: ''
+  authReady: DEMO, authed: false, userEmail: '', isAdmin: false,
+  gate: 'login', gateErr: '', gateBusy: false, gateEmail: '',
+  resources: seed(), fDl: true
 };
 function t () { return STR[S.lang]; }
 
@@ -147,45 +173,68 @@ var DL_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" strok
 function esc (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
   return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); }
 function viewLabel (type) { return type === 'Video' ? t().watch : (type === 'Audio' ? t().listen : t().view); }
-
-/* Detecta el ID de un enlace de Google Drive (cualquier formato) */
 function driveId (url) {
   if (!url) return null;
   var m = url.match(/\/file\/d\/([^/]+)/) || url.match(/[?&]id=([^&]+)/) || url.match(/\/d\/([^/]+)/);
   return m ? m[1] : null;
 }
-/* Detecta el ID de un enlace de YouTube (watch, youtu.be, embed, shorts) */
 function ytId (url) {
   if (!url) return null;
   var m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?&/]+)/) ||
           url.match(/\/embed\/([^?&/]+)/) || url.match(/\/shorts\/([^?&/]+)/);
   return m ? m[1] : null;
 }
-/* Enlace para VER (vista previa embebida) — convierte solo */
 function previewLink (r) {
   var d = driveId(r.link); if (d) return 'https://drive.google.com/file/d/' + d + '/preview';
   var y = ytId(r.link);   if (y) return 'https://www.youtube.com/embed/' + y;
   return r.link || '';
 }
-/* Enlace para DESCARGAR (descarga directa de Drive) — convierte solo */
 function downloadLink (r) {
   var d = driveId(r.link); if (d) return 'https://drive.google.com/uc?export=download&id=' + d;
   return r.link || '';
 }
 
-/* ---------- 6. Vistas (HTML) ---------- */
+/* ---------- 6. Muro de acceso (login / registro) ---------- */
+function gateHTML () {
+  var T = t();
+  var isLogin = S.gate === 'login';
+  var langToggle = '<div class="lang gate-lang"><button class="'+(S.lang==='es'?'on':'')+'" data-action="lang" data-lang="es">ES</button>'+
+    '<button class="'+(S.lang==='en'?'on':'')+'" data-action="lang" data-lang="en">EN</button></div>';
+  return '<div class="gate">'+ langToggle +
+    '<div class="gate-card">'+
+      '<div class="gate-cat">'+CAT_BIG+'</div>'+
+      '<div class="gate-brand">English Class</div>'+
+      '<div class="gate-teacher">Teacher Azul Covarrubias</div>'+
+      '<h1 class="gate-title">'+T.gate_welcome+'</h1>'+
+      '<p class="gate-p">'+T.gate_sub+'</p>'+
+      '<div class="gate-tabs">'+
+        '<button class="gate-tab '+(isLogin?'on':'')+'" data-action="gate-tab" data-tab="login">'+T.tab_login+'</button>'+
+        '<button class="gate-tab '+(!isLogin?'on':'')+'" data-action="gate-tab" data-tab="register">'+T.tab_register+'</button>'+
+      '</div>'+
+      '<div class="field"><label>'+T.email+'</label><input id="g-email" type="email" inputmode="email" autocomplete="email" value="'+esc(S.gateEmail)+'" placeholder="tucorreo@ejemplo.com"/></div>'+
+      '<div class="field"><label>'+T.password+'</label><input id="g-pass" type="password" autocomplete="'+(isLogin?'current-password':'new-password')+'" placeholder="••••••••"/></div>'+
+      (S.gateErr ? '<div class="err">'+esc(S.gateErr)+'</div>' : '<div class="err"></div>')+
+      '<button class="btn-block gate-submit" data-action="'+(isLogin?'gate-login':'gate-register')+'">'+
+        (S.gateBusy ? T.gate_wait : (isLogin ? T.gate_login_btn : T.gate_register_btn))+'</button>'+
+      (DEMO ? '<p class="demo-note">'+T.demo_badge+'</p>' : '')+
+    '</div>'+
+    '<div class="gate-foot">🐾 Aprende a tu ritmo</div>'+
+  '</div>';
+}
+
+/* ---------- 7. Vistas de la app ---------- */
 function navHTML () {
   var T = t();
-  var demoBadge = DEMO ? '<span style="background:#fff3e8;color:#c96a1e;font-weight:800;font-size:10.5px;padding:4px 9px;border-radius:99px;border:1px solid #ffd9b8">'+T.demo_badge+'</span>' : '';
-  return '<div class="nav"><div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0">'+
+  var demoBadge = DEMO ? '<span class="demo-pill">'+T.demo_badge+'</span>' : '';
+  var adminBtn = S.isAdmin ? '<button class="btn-admin" data-action="admin">'+T.admin+'</button>' : '';
+  return '<div class="nav"><div class="wrap nav-inner">'+
     '<div class="brand" data-action="home"><div class="brand-logo">'+CAT+'</div>'+
       '<div><div class="brand-name">English Class</div><div class="brand-sub">Teacher Azul Covarrubias</div></div></div>'+
     '<div class="nav-links">'+ demoBadge +
-      '<button class="nav-link '+(S.view==='home'?'active':'')+'" data-action="home">'+T.nav_home+'</button>'+
-      '<button class="nav-link" data-action="home">'+T.nav_subjects+'</button>'+
       '<div class="lang"><button class="'+(S.lang==='es'?'on':'')+'" data-action="lang" data-lang="es">ES</button>'+
         '<button class="'+(S.lang==='en'?'on':'')+'" data-action="lang" data-lang="en">EN</button></div>'+
-      '<button class="btn-admin" data-action="admin">'+T.admin+'</button>'+
+      adminBtn +
+      '<button class="btn-logout" data-action="logout">'+T.logout+'</button>'+
     '</div></div></div>';
 }
 
@@ -257,16 +306,6 @@ function subjectHTML () {
 
 function adminHTML () {
   var T = t();
-  if (!S.authed) {
-    return '<div class="wrap"><div class="login">'+
-      '<div class="cat">'+CAT+'</div><h2>'+T.login_title+'</h2><p class="subt">'+T.login_sub+'</p>'+
-      '<div class="field"><label>'+T.email+'</label><input id="in-email" placeholder="azul@englishclass.mx"/></div>'+
-      '<div class="field"><label>'+T.password+'</label><input id="in-pass" type="password" placeholder="••••••••"/></div>'+
-      '<button class="btn-block" style="background:#8b7bf0;box-shadow:0 10px 20px -8px rgba(139,123,240,.7)" data-action="login">'+T.enter+'</button>'+
-      '<div class="err">'+esc(S.loginErr)+'</div>'+
-      (DEMO ? '<p class="demo-note">'+T.demo_note+'</p>' : '')+
-    '</div></div>';
-  }
   var opts = SUBJ_ORDER.map(function (k) { return '<option value="'+k+'">'+SUBJECTS[k].name+'</option>'; }).join('');
   var typeOpts = ['PDF','Audio','Video','Doc'].map(function (k) {
     return '<option value="'+k+'">'+(k==='Video'?'Video (YouTube)':k)+'</option>'; }).join('');
@@ -281,7 +320,8 @@ function adminHTML () {
       '<div><button class="btn-del" title="'+T.del+'" data-action="delete" data-id="'+r.id+'">'+
         svg('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>','currentColor',15)+'</button></div></div>';
   }).join('');
-  return '<div class="wrap"><div class="admin">'+
+  return '<div class="wrap"><button class="back" data-action="home">'+svg('<path d="M19 12H5M12 19l-7-7 7-7"/>','currentColor',15)+' '+T.back+'</button>'+
+    '<div class="admin">'+
     '<div class="admin-form"><h2>'+T.add_title+'</h2><p class="subt">'+T.add_sub+'</p>'+
       '<div class="field"><label>'+T.f_title+'</label><input id="f-title" placeholder="'+T.f_title_ph+'"/></div>'+
       '<div class="row2"><div style="flex:1"><label>'+T.f_subject+'</label><select id="f-subject">'+opts+'</select></div>'+
@@ -294,8 +334,7 @@ function adminHTML () {
         svg('<path d="M12 5v14M5 12h14"/>','currentColor',17)+' '+T.add_btn+'</button>'+
     '</div>'+
     '<div class="admin-list"><div class="section-head"><h2>'+T.manage+'</h2>'+
-      '<div style="display:flex;align-items:center;gap:10px"><span class="hint">'+S.resources.length+' '+T.materials+'</span>'+
-        '<button class="chip" data-action="logout">'+T.logout+'</button></div></div>'+
+      '<span class="hint">'+S.resources.length+' '+T.materials+'</span></div>'+
       '<div class="table"><div class="trow thead"><div>'+T.c_title+'</div><div>'+T.c_subject+'</div><div>'+T.c_type+'</div><div>'+T.c_dl+'</div><div></div></div>'+
         rows+'</div>'+
       '<div class="tip"><div style="font-size:20px">💡</div><div>'+T.tip+'</div></div>'+
@@ -307,7 +346,7 @@ function footerHTML () {
     '<div>Firebase + GitHub Pages</div></div>';
 }
 
-/* ---------- 7. Modal reproductor ---------- */
+/* ---------- 8. Modal reproductor ---------- */
 function openViewer (r) {
   var T = t(), root = document.getElementById('modal-root');
   var pv = previewLink(r);
@@ -327,17 +366,21 @@ function openViewer (r) {
 }
 function closeViewer () { document.getElementById('modal-root').innerHTML = ''; }
 
-/* ---------- 8. Render ---------- */
+/* ---------- 9. Render ---------- */
 function render () {
+  var app = document.getElementById('app');
+  if (!S.authReady) { app.innerHTML = '<div class="loading">'+t().gate_wait+' 🐾</div>'; return; }
+  if (!S.authed) { app.innerHTML = gateHTML(); return; }
   var html = navHTML();
   if (S.view === 'home') html += homeHTML();
   else if (S.view === 'subject') html += subjectHTML();
-  else if (S.view === 'admin') html += adminHTML();
-  document.getElementById('app').innerHTML = html;
+  else if (S.view === 'admin' && S.isAdmin) html += adminHTML();
+  else { S.view = 'home'; html += homeHTML(); }
+  app.innerHTML = html;
   window.scrollTo(0, 0);
 }
 
-/* ---------- 9. Acciones ---------- */
+/* ---------- 10. Acciones ---------- */
 function byId (id) { return S.resources.filter(function (r) { return r.id === id; })[0]; }
 
 document.addEventListener('click', function (e) {
@@ -346,37 +389,68 @@ document.addEventListener('click', function (e) {
   var a = el.getAttribute('data-action');
 
   if (a === 'home')          { S.view = 'home'; render(); }
-  else if (a === 'admin')    { S.view = 'admin'; S.loginErr = ''; render(); }
+  else if (a === 'admin')    { if (S.isAdmin) { S.view = 'admin'; render(); } }
   else if (a === 'lang')     { S.lang = el.getAttribute('data-lang'); localStorage.setItem('ec_lang', S.lang); render(); }
   else if (a === 'open-subject') { S.view = 'subject'; S.subject = el.getAttribute('data-subject'); S.filter = 'all'; render(); }
   else if (a === 'filter')   { S.filter = el.getAttribute('data-filter'); render(); }
   else if (a === 'toggle-dl'){ S.fDl = !S.fDl; render(); }
   else if (a === 'logout')   { doLogout(); }
-  else if (a === 'login')    { doLogin(); }
+  else if (a === 'gate-tab') { S.gate = el.getAttribute('data-tab'); S.gateErr = ''; render(); }
+  else if (a === 'gate-login')    { doGateAuth(false); }
+  else if (a === 'gate-register') { doGateAuth(true); }
   else if (a === 'add')      { doAdd(); }
   else if (a === 'delete')   { doDelete(el.getAttribute('data-id')); }
   else if (a === 'view')     { openViewer(byId(el.getAttribute('data-id'))); }
   else if (a === 'download') { var r = byId(el.getAttribute('data-id')); var dl = r ? downloadLink(r) : ''; if (dl) window.open(dl, '_blank'); else openViewer(r); }
   else if (a === 'close-modal') { if (!e.target.closest('[data-stop]') || e.target.closest('.modal-close')) closeViewer(); }
 });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeViewer(); });
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeViewer();
+  if (e.key === 'Enter' && !S.authed && S.authReady) {
+    var f = document.getElementById('g-pass'); if (f) { S.gate === 'login' ? doGateAuth(false) : doGateAuth(true); }
+  }
+});
 
-/* ---------- 10. Auth ---------- */
-function doLogin () {
-  var email = (document.getElementById('in-email') || {}).value || '';
-  var pass  = (document.getElementById('in-pass') || {}).value || '';
-  if (DEMO) { S.authed = true; S.loginErr = ''; render(); return; }
-  AUTH.signInWithEmailAndPassword(email.trim(), pass).then(function () {
-    S.authed = true; S.loginErr = ''; render();
-  }).catch(function () { S.loginErr = t().bad_login; render(); });
+/* ---------- 11. Autenticación (muro) ---------- */
+function gateError (code) {
+  var T = t();
+  if (code === 'auth/email-already-in-use') return T.gate_exists;
+  if (code === 'auth/invalid-email') return T.gate_invalid;
+  if (code === 'auth/weak-password') return T.gate_min;
+  if (code === 'auth/wrong-password' || code === 'auth/user-not-found' ||
+      code === 'auth/invalid-credential') return T.gate_bad;
+  return T.gate_bad;
+}
+function doGateAuth (isRegister) {
+  var email = (document.getElementById('g-email') || {}).value || '';
+  var pass  = (document.getElementById('g-pass') || {}).value || '';
+  email = email.trim();
+  S.gateEmail = email;
+  if (pass.length < 6) { S.gateErr = t().gate_min; render(); return; }
+
+  if (DEMO) {
+    S.authed = true; S.isAdmin = true; S.userEmail = email || 'demo'; S.gateErr = '';
+    render(); return;
+  }
+  S.gateBusy = true; S.gateErr = ''; render();
+  var op = isRegister
+    ? AUTH.createUserWithEmailAndPassword(email, pass)
+    : AUTH.signInWithEmailAndPassword(email, pass);
+  op.then(function () {
+    S.gateBusy = false;   // onAuthStateChanged completa el resto
+  }).catch(function (err) {
+    S.gateBusy = false; S.gateErr = gateError(err && err.code); render();
+  });
 }
 function doLogout () {
   if (!DEMO && AUTH) { AUTH.signOut(); }
-  S.authed = false; S.view = 'home'; render();
+  S.authed = false; S.isAdmin = false; S.userEmail = ''; S.view = 'home';
+  S.gate = 'login'; S.gateErr = ''; render();
 }
 
-/* ---------- 11. Agregar / eliminar ---------- */
+/* ---------- 12. Agregar / eliminar ---------- */
 function doAdd () {
+  if (!S.isAdmin) return;
   var title = (document.getElementById('f-title') || {}).value || '';
   title = title.trim(); if (!title) { return; }
   var rec = {
@@ -398,14 +472,15 @@ function doAdd () {
     .catch(function (err) { alert('No se pudo guardar: ' + err.message); });
 }
 function doDelete (id) {
+  if (!S.isAdmin) return;
   if (DEMO) { S.resources = S.resources.filter(function (r) { return r.id !== id; }); render(); return; }
   DB.collection('recursos').doc(id).delete().then(loadResources)
     .catch(function (err) { alert('No se pudo eliminar: ' + err.message); });
 }
 
-/* ---------- 12. Cargar desde Firestore ---------- */
+/* ---------- 13. Cargar desde Firestore ---------- */
 function loadResources () {
-  if (DEMO) { S.loaded = true; render(); return; }
+  if (DEMO) { render(); return; }
   DB.collection('recursos').orderBy('fecha', 'desc').get().then(function (snap) {
     var arr = [];
     snap.forEach(function (doc) {
@@ -416,19 +491,25 @@ function loadResources () {
       });
     });
     if (arr.length) S.resources = arr;   // si está vacío, deja el material de ejemplo
-    S.loaded = true; render();
+    render();
   }).catch(function (err) {
     console.warn('No se pudo leer Firestore, usando ejemplo:', err);
-    S.loaded = true; render();
+    render();
   });
 }
 
-/* ---------- 13. Arranque ---------- */
+/* ---------- 14. Arranque ---------- */
 render();
-loadResources();
 if (!DEMO && AUTH) {
   AUTH.onAuthStateChanged(function (user) {
-    S.authed = !!user;
-    if (S.view === 'admin') render();
+    S.authReady = true;
+    if (user) {
+      S.authed = true; S.userEmail = user.email || '';
+      S.isAdmin = computeAdmin(user.email);
+      loadResources();     // carga + render
+    } else {
+      S.authed = false; S.isAdmin = false; S.userEmail = '';
+      render();
+    }
   });
 }
