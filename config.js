@@ -25,4 +25,4 @@ window.FIREBASE_CONFIG = {
    Puedes poner varios separados por coma: ["a@x.com", "b@x.com"]
    ========================================================================= */
 
-window.ADMIN_EMAILS = [azulcovar7@gmail.com];
+window.ADMIN_EMAILS = ["azulcovar7@gmail.com"];
