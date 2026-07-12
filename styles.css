@@ -105,6 +105,7 @@ input:focus,select:focus{outline:none;border-color:#8b7bf0;box-shadow:0 0 0 3px 
 .trow .t{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
 .btn-del{border:none;cursor:pointer;background:#fff1ee;color:#e5573c;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.btn-edit{border:none;cursor:pointer;background:#eaf5ff;color:#2f8ce0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center}
 .tip{margin-top:16px;background:#f0ecff;border:1.5px solid #e0d8fb;border-radius:16px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start;font-size:13px;color:#57536b;font-weight:600;line-height:1.55}
 
 /* modal viewer */
@@ -200,7 +201,7 @@ input:focus,select:focus{outline:none;border-color:#8b7bf0;box-shadow:0 0 0 3px 
   .trow>div:nth-child(3){grid-column:2;grid-row:1}
   .trow>div:nth-child(4){grid-column:2;grid-row:2;text-align:right}
   .trow>div:nth-child(5){grid-column:2;grid-row:3;justify-self:end}
-  .btn-del{width:34px;height:34px}
+  .btn-del,.btn-edit{width:34px;height:34px}
 
   .modal-bg{padding:0;align-items:flex-end}
   .modal{max-height:94vh;border-radius:20px 20px 0 0;width:100%}

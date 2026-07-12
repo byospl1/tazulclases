@@ -87,11 +87,13 @@ var STR = {
     subjects:'Materias', subjects_hint:'Elige una para empezar', materials:'recursos',
     recent:'Recién agregado', view:'Ver', watch:'Ver vídeo', listen:'Escuchar', download:'Descargar',
     back:'Volver', all:'Todos', dlable:'descargable', empty:'Aún no hay material en esta materia.',
-    add_title:'Agregar recurso', add_sub:'Pega el enlace normal de Drive o YouTube; se convierte solo.',
+    add_title:'Agregar recurso', edit_title:'Editar recurso', add_sub:'Pega el enlace normal de Drive o YouTube; se convierte solo.',
+    edit_sub:'Cambia los datos y guarda: se actualiza en Firebase para todos.',
     f_title:'Título', f_title_ph:'Ej. Present Perfect: guía', f_subject:'Materia', f_type:'Tipo',
     f_link:'Enlace (Drive / YouTube)', f_link_ph:'https://…', f_dl:'Permitir descarga', add_btn:'Agregar a la biblioteca',
+    save_btn:'Guardar cambios', cancel_btn:'Cancelar',
     manage:'Material publicado',
-    c_title:'Título', c_subject:'Materia', c_type:'Tipo', c_dl:'Descarga', yes:'Sí', del:'Eliminar',
+    c_title:'Título', c_subject:'Materia', c_type:'Tipo', c_dl:'Descarga', yes:'Sí', del:'Eliminar', edit:'Editar',
     tip:'Los vídeos van a YouTube y los PDF/audios/docs a Google Drive con enlace público. Aquí solo guardas el enlace: nunca te quedas sin espacio y todo sigue gratis.',
     open_new:'Abrir en pestaña nueva', no_link:'Este recurso todavía no tiene enlace. Agrégalo desde el panel.',
     demo_badge:'MODO DEMO · conecta Firebase en config.js',
@@ -114,11 +116,13 @@ var STR = {
     subjects:'Subjects', subjects_hint:'Pick one to start', materials:'resources',
     recent:'Recently added', view:'View', watch:'Watch', listen:'Listen', download:'Download',
     back:'Back', all:'All', dlable:'downloadable', empty:'No material in this subject yet.',
-    add_title:'Add resource', add_sub:'Paste the normal Drive or YouTube link; it converts itself.',
+    add_title:'Add resource', edit_title:'Edit resource', add_sub:'Paste the normal Drive or YouTube link; it converts itself.',
+    edit_sub:'Change the details and save: it updates in Firebase for everyone.',
     f_title:'Title', f_title_ph:'e.g. Present Perfect: guide', f_subject:'Subject', f_type:'Type',
     f_link:'Link (Drive / YouTube)', f_link_ph:'https://…', f_dl:'Allow download', add_btn:'Add to library',
+    save_btn:'Save changes', cancel_btn:'Cancel',
     manage:'Published material',
-    c_title:'Title', c_subject:'Subject', c_type:'Type', c_dl:'Download', yes:'Yes', del:'Delete',
+    c_title:'Title', c_subject:'Subject', c_type:'Type', c_dl:'Download', yes:'Yes', del:'Delete', edit:'Edit',
     tip:'Videos live on YouTube and PDFs/audio/docs on Google Drive with a public link. Here you only store the link: you never run out of space and it stays free.',
     open_new:'Open in new tab', no_link:'This resource has no link yet. Add it from the panel.',
     demo_badge:'DEMO MODE · connect Firebase in config.js',
@@ -140,7 +144,7 @@ var S = {
   view: 'home', subject: 'grammar', filter: 'all',
   authReady: DEMO, authed: false, userEmail: '', isAdmin: false,
   gate: 'login', gateErr: '', gateBusy: false, gateEmail: '', gateUser: '', userName: '',
-  resources: DEMO ? seed() : [], fDl: true
+  resources: DEMO ? seed() : [], fDl: true, editingId: null
 };
 function t () { return STR[S.lang]; }
 
@@ -318,9 +322,10 @@ function subjectHTML () {
 
 function adminHTML () {
   var T = t();
-  var opts = SUBJ_ORDER.map(function (k) { return '<option value="'+k+'">'+SUBJECTS[k].name+'</option>'; }).join('');
+  var editing = S.editingId ? byId(S.editingId) : null;
+  var opts = SUBJ_ORDER.map(function (k) { return '<option value="'+k+'"'+(editing&&editing.subject===k?' selected':'')+'>'+SUBJECTS[k].name+'</option>'; }).join('');
   var typeOpts = ['PDF','Audio','Video','Doc'].map(function (k) {
-    return '<option value="'+k+'">'+(k==='Video'?'Video (YouTube)':k)+'</option>'; }).join('');
+    return '<option value="'+k+'"'+(editing&&editing.type===k?' selected':'')+'>'+(k==='Video'?'Video (YouTube)':k)+'</option>'; }).join('');
   var rows = S.resources.map(function (r) {
     var ty = TYPES[r.type] || TYPES.Doc;
     var dl = r.dl ? '<span style="font-size:11px;font-weight:800;color:#2aa464">✓ '+T.yes+'</span>'
@@ -329,21 +334,26 @@ function adminHTML () {
       '<div style="font-size:12.5px;color:#57536b;font-weight:700">'+(SUBJECTS[r.subject]?SUBJECTS[r.subject].name:esc(r.subject))+'</div>'+
       '<div><span class="pill" style="background:'+ty.light+';color:'+ty.color+'">'+esc(r.type)+'</span></div>'+
       '<div>'+dl+'</div>'+
-      '<div><button class="btn-del" title="'+T.del+'" data-action="delete" data-id="'+r.id+'">'+
+      '<div style="display:flex;gap:6px"><button class="btn-edit" title="'+T.edit+'" data-action="edit-start" data-id="'+r.id+'">'+
+        svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>','currentColor',15)+'</button>'+
+        '<button class="btn-del" title="'+T.del+'" data-action="delete" data-id="'+r.id+'">'+
         svg('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>','currentColor',15)+'</button></div></div>';
   }).join('');
   return '<div class="wrap"><button class="back" data-action="home">'+svg('<path d="M19 12H5M12 19l-7-7 7-7"/>','currentColor',15)+' '+T.back+'</button>'+
     '<div class="admin">'+
-    '<div class="admin-form"><h2>'+T.add_title+'</h2><p class="subt">'+T.add_sub+'</p>'+
-      '<div class="field"><label>'+T.f_title+'</label><input id="f-title" placeholder="'+T.f_title_ph+'"/></div>'+
+    '<div class="admin-form"><h2>'+(editing?T.edit_title:T.add_title)+'</h2><p class="subt">'+(editing?T.edit_sub:T.add_sub)+'</p>'+
+      '<div class="field"><label>'+T.f_title+'</label><input id="f-title" value="'+(editing?esc(editing.title):'')+'" placeholder="'+T.f_title_ph+'"/></div>'+
       '<div class="row2"><div style="flex:1"><label>'+T.f_subject+'</label><select id="f-subject">'+opts+'</select></div>'+
         '<div style="flex:1"><label>'+T.f_type+'</label><select id="f-type">'+typeOpts+'</select></div></div>'+
-      '<div class="field"><label>'+T.f_link+'</label><input id="f-link" placeholder="'+T.f_link_ph+'"/></div>'+
+      '<div class="field"><label>'+T.f_link+'</label><input id="f-link" value="'+(editing?esc(editing.link):'')+'" placeholder="'+T.f_link_ph+'"/></div>'+
       '<div class="switch" data-action="toggle-dl"><div class="track" style="background:'+(S.fDl?'#35c07a':'#d7d3e6')+'">'+
         '<div class="knob" style="transform:translateX('+(S.fDl?'18px':'0')+')"></div></div>'+
         '<span style="font-size:13.5px;font-weight:700;color:#57536b">'+T.f_dl+'</span></div>'+
-      '<button class="btn-block" style="background:#35c07a;box-shadow:0 10px 20px -8px rgba(53,192,122,.6);display:flex;align-items:center;justify-content:center;gap:7px" data-action="add">'+
-        svg('<path d="M12 5v14M5 12h14"/>','currentColor',17)+' '+T.add_btn+'</button>'+
+      '<div style="display:flex;gap:10px">'+
+      '<button class="btn-block" style="background:#35c07a;box-shadow:0 10px 20px -8px rgba(53,192,122,.6);display:flex;align-items:center;justify-content:center;gap:7px" data-action="'+(editing?'save-edit':'add')+'">'+
+        svg(editing?'<path d="M20 6L9 17l-5-5"/>':'<path d="M12 5v14M5 12h14"/>','currentColor',17)+' '+(editing?T.save_btn:T.add_btn)+'</button>'+
+      (editing?'<button class="btn-block" style="background:#e7e4f2;color:#57536b;box-shadow:none" data-action="cancel-edit">'+T.cancel_btn+'</button>':'')+
+      '</div>'+
     '</div>'+
     '<div class="admin-list"><div class="section-head"><h2>'+T.manage+'</h2>'+
       '<span class="hint">'+S.resources.length+' '+T.materials+'</span></div>'+
@@ -355,7 +365,7 @@ function adminHTML () {
 
 function footerHTML () {
   return '<div class="footer"><div>🐾 English Class · Teacher Azul Covarrubias</div>'+
-     '<div>Firebase + GitHub Pages</div></div>';
+    '<div>Firebase + GitHub Pages</div></div>';
 }
 
 /* ---------- 8. Modal reproductor ---------- */
@@ -411,6 +421,9 @@ document.addEventListener('click', function (e) {
   else if (a === 'gate-login')    { doGateAuth(false); }
   else if (a === 'gate-register') { doGateAuth(true); }
   else if (a === 'add')      { doAdd(); }
+  else if (a === 'edit-start') { S.editingId = el.getAttribute('data-id'); var er = byId(S.editingId); S.fDl = er ? !!er.dl : true; render(); }
+  else if (a === 'cancel-edit') { S.editingId = null; S.fDl = true; render(); }
+  else if (a === 'save-edit') { doUpdate(); }
   else if (a === 'delete')   { doDelete(el.getAttribute('data-id')); }
   else if (a === 'view')     { openViewer(byId(el.getAttribute('data-id'))); }
   else if (a === 'download') { var r = byId(el.getAttribute('data-id')); var dl = r ? downloadLink(r) : ''; if (dl) window.open(dl, '_blank'); else openViewer(r); }
@@ -532,6 +545,29 @@ function doAdd () {
   }).then(function () { S.fDl = true; loadResources(); })
     .catch(function (err) { alert('No se pudo guardar: ' + err.message); });
 }
+function doUpdate () {
+  if (!S.isAdmin || !S.editingId) return;
+  var title = (document.getElementById('f-title') || {}).value || '';
+  title = title.trim(); if (!title) { return; }
+  var patch = {
+    title: title,
+    subject: (document.getElementById('f-subject') || {}).value || 'grammar',
+    type: (document.getElementById('f-type') || {}).value || 'PDF',
+    link: ((document.getElementById('f-link') || {}).value || '').trim(),
+    dl: S.fDl
+  };
+  var id = S.editingId;
+  if (DEMO) {
+    var r = byId(id);
+    if (r) { r.title = patch.title; r.subject = patch.subject; r.type = patch.type; r.link = patch.link; r.dl = patch.dl; }
+    S.editingId = null; S.fDl = true; render(); return;
+  }
+  DB.collection('recursos').doc(id).update({
+    titulo: patch.title, materia: patch.subject, tipo: patch.type,
+    enlace: patch.link, descargable: patch.dl
+  }).then(function () { S.editingId = null; S.fDl = true; loadResources(); })
+    .catch(function (err) { alert('No se pudo actualizar: ' + err.message); });
+}
 function doDelete (id) {
   if (!S.isAdmin) return;
   if (DEMO) { S.resources = S.resources.filter(function (r) { return r.id !== id; }); render(); return; }
@@ -563,7 +599,15 @@ function loadResources () {
 /* ---------- 14. Arranque ---------- */
 render();
 if (!DEMO && AUTH) {
+  // Plan B: si Firebase no responde en 6s, mostrar el login igual (nunca quedarse "Cargando")
+  var safety = setTimeout(function () {
+    if (!S.authReady) {
+      console.warn('Firebase Auth no respondió a tiempo; mostrando acceso.');
+      S.authReady = true; render();
+    }
+  }, 6000);
   AUTH.onAuthStateChanged(function (user) {
+    clearTimeout(safety);
     S.authReady = true;
     if (user) {
       S.authed = true; S.userEmail = user.email || ''; S.userName = user.displayName || '';
@@ -573,5 +617,9 @@ if (!DEMO && AUTH) {
       S.authed = false; S.isAdmin = false; S.userEmail = '';
       render();
     }
+  }, function (err) {
+    clearTimeout(safety);
+    console.warn('Error de Auth:', err);
+    S.authReady = true; render();
   });
 }
